@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>User yuborish</h2>
+
+<input id="name" placeholder="Ism yoz" />
+<button onclick="sendUser()">Yuborish</button>
+
+<p id="result"></p>
+
+<script>
+function sendUser() {
+  const name = document.getElementById("name").value;
+
+  fetch("http://localhost:3000/user", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: name })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("result").innerText = data.message;
+  });
+}
+</script>
+
+</body>
+</html>
