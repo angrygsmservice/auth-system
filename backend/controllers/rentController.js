@@ -1,5 +1,5 @@
 const RentOrder = require("../models/rentOrder");
-const Service = require("../models/service");
+const Service = require("../models/Service");
 
 // =====================================================
 // USER: CREATE RENT ORDER
@@ -105,45 +105,32 @@ const duration =
 const startTime = new Date();
 
 // =================================================
-// END TIME
-// =================================================
-
-const endTime = new Date(startTime);
-
-if (service.durationUnit === "minutes") {
-  endTime.setMinutes(
-    endTime.getMinutes() + duration
-  );
-}
-
-if (service.durationUnit === "hours") {
-  endTime.setHours(
-    endTime.getHours() + duration
-  );
-}
-
-if (service.durationUnit === "days") {
-  endTime.setDate(
-    endTime.getDate() + duration
-  );
-}
-
-// =================================================
 // CREATE RENT ORDER
 // =================================================
 
-    const rentOrder = await RentOrder.create({
-      user: req.user.id,
-      service: service._id,
-      price: Number(service.price),
+const rentOrder = await RentOrder.create({
+  user: req.user.id,
+  service: service._id,
+  price: Number(service.price),
 
-      duration,
+  duration,
 
-      durationUnit: service.durationUnit,
-      startTime,
-      endTime,
-      status: "pending",
-    });
+  durationUnit: service.durationUnit,
+
+  // User order bergan aniq vaqt
+  startTime,
+
+  // Hali rent boshlanmagan
+  activatedAt: null,
+
+  // Hali tugamagan
+  endTime: null,
+
+  // Hali bekor qilinmagan
+  cancelledAt: null,
+
+  status: "pending",
+});
 
     // =================================================
     // SUCCESS
@@ -211,6 +198,8 @@ const getMyRentOrders = async (req, res) => {
         createdAt: -1,
       });
 
+    console.log("MY RENT ORDERS:", rentOrders);
+
     return res.status(200).json({
       success: true,
       data: rentOrders,
@@ -268,10 +257,7 @@ const getRentOrders = async (req, res) => {
 // ADMIN: UPDATE STATUS
 // =====================================================
 
-const updateRentOrderStatus = async (
-  req,
-  res
-) => {
+const updateRentOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -287,10 +273,7 @@ const updateRentOrderStatus = async (
     // STATUS VALIDATION
     // =================================================
 
-    if (
-      !status ||
-      !allowedStatuses.includes(status)
-    ) {
+    if (!status || !allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid rent order status",
@@ -298,32 +281,10 @@ const updateRentOrderStatus = async (
     }
 
     // =================================================
-    // UPDATE
+    // FIND ORDER
     // =================================================
 
-    const rentOrder =
-      await RentOrder.findByIdAndUpdate(
-        id,
-        {
-          status,
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      )
-        .populate(
-          "user",
-          "name email"
-        )
-        .populate(
-          "service",
-          "name description price duration durationUnit"
-        );
-
-    // =================================================
-    // NOT FOUND
-    // =================================================
+    const rentOrder = await RentOrder.findById(id);
 
     if (!rentOrder) {
       return res.status(404).json({
@@ -333,14 +294,63 @@ const updateRentOrderStatus = async (
     }
 
     // =================================================
+    // UPDATE DATA
+    // =================================================
+
+    const updateData = {
+      status,
+    };
+
+    // =================================================
+    // ACTIVE
+    // =================================================
+
+    if (status === "active") {
+      updateData.activatedAt = new Date();
+    }
+
+    // =================================================
+    // COMPLETED
+    // =================================================
+
+    if (status === "completed") {
+      updateData.endTime = new Date();
+    }
+
+    // =================================================
+    // CANCELLED
+    // =================================================
+
+    if (status === "cancelled") {
+      updateData.cancelledAt = new Date();
+    }
+
+    // =================================================
+    // UPDATE
+    // =================================================
+
+    const updatedOrder = await RentOrder.findByIdAndUpdate(
+      id,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate("user", "name email")
+      .populate(
+        "service",
+        "name description price durationMin durationMax durationUnit"
+      );
+
+    // =================================================
     // SUCCESS
     // =================================================
 
     return res.status(200).json({
       success: true,
-      message:
-        "Rent order status updated successfully",
-      data: rentOrder,
+      message: "Rent order status updated successfully",
+      data: updatedOrder,
     });
   } catch (error) {
     console.error(
@@ -350,8 +360,7 @@ const updateRentOrderStatus = async (
 
     return res.status(500).json({
       success: false,
-      message:
-        "Failed to update rent order status",
+      message: "Failed to update rent order status",
     });
   }
 };
