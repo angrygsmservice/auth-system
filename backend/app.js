@@ -23,6 +23,16 @@ const rentRoutes = require("./routes/rent");
 const depositRoutes = require("./routes/depositRoutes");
 const app = express();
 
+app.get("/test-direct", (req, res) => {
+  console.log("DIRECT TEST HIT");
+  res.json({ success: true, message: "Express ishlayapti" });
+});
+
+app.use((req, res, next) => {
+  console.log("REQUEST:", req.method, req.url);
+  next();
+});
+
 // Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,9 +48,10 @@ app.use(
       "http://localhost:3001",
       "http://localhost:3000",
       "http://localhost:5173",
+      "https://auth-frontend-zeta-green.vercel.app",
     ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
