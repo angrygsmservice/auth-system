@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api"
+      "source": "/api/v1/:path*",
+      "destination": "https://backend-ten-dusky-24.vercel.app/api/v1/:path*"
     }
   ]
 }
