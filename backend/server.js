@@ -1,3 +1,7 @@
+const dns = require("dns");
+dns.setDefaultResultOrder("ipv4first");
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 require("dotenv").config();
 
 const mongoose = require("mongoose");
@@ -19,12 +23,16 @@ mongoose
 
     console.log("===== USERS =====");
     console.table(users);
-    
+
     const PORT = process.env.PORT || 3000;
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📖 Swagger: http://localhost:${PORT}/api-docs`);
+    const server = app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
+      console.log(`📖 Swagger: http://127.0.0.1:${PORT}/api-docs`);
+    });
+
+    server.on("connection", (socket) => {
+      console.log("TCP CONNECTION RECEIVED");
     });
   })
   .catch((err) => {

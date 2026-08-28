@@ -28,52 +28,69 @@ export default function RegisterPage() {
         throw new Error("All fields are required");
       }
 
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        email,
-        password,
-      }),
-    }
-  );
+      console.log(
+        "API URL:",
+        process.env.NEXT_PUBLIC_API_URL
+      );
 
-  const data = await response.json(); // <-- SHU QATORNI QO'SHING
+      const url =
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`;
 
-  alert
+      console.log("REGISTER URL:", url);
+      console.log("REGISTER REQUEST START");
 
-  if (!response.ok) {
-    throw new Error(data.message || "Register failed");
-  }
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
 
-  console.log("Backend javobi:", data);
+      console.log(
+        "RESPONSE STATUS:",
+        response.status
+      );
 
-if (!response.ok) {
-  throw new Error(data.message || "Register failed");
-}
+      const data = await response.json();
 
-console.log("Backend javobi:", data);
+      console.log(
+        "BACKEND RESPONSE:",
+        data
+      );
 
-  toast.success(data.message);
-  router.push("/login");
-  
-      } catch (err: any) {
-        const message =
-          err.response?.data?.message ||
-          err.message ||
-          "Something went wrong.";
-
-        toast.error(message)
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Register failed"
+        );
       }
 
-     }
+      toast.success(data.message);
+
+      router.push("/login");
+
+    } catch (err: any) {
+      console.error(
+        "REGISTER ERROR:",
+        err
+      );
+
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Something went wrong.";
+
+      setError(message);
+      toast.error(message);
+
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-indigo-200 px-4">
@@ -110,7 +127,9 @@ console.log("Backend javobi:", data);
               type="text"
               placeholder="Enter your full name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) =>
+                setName(e.target.value)
+              }
               required
               className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 transition duration-300 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -130,7 +149,9 @@ console.log("Backend javobi:", data);
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
               required
               className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 transition duration-300 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -147,22 +168,40 @@ console.log("Backend javobi:", data);
             />
 
             <input
-              type={showPassword ? "text" : "password"}
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
+              }
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
               required
               className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-20 transition duration-300 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() =>
+                setShowPassword(!showPassword)
+              }
               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword ? (
+                <EyeOff size={20} />
+              ) : (
+                <Eye size={20} />
+              )}
             </button>
           </div>
+
+          {error && (
+            <p className="mt-4 text-sm text-red-600 text-center">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -172,6 +211,7 @@ console.log("Backend javobi:", data);
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+
                 <span>Creating...</span>
               </div>
             ) : (
@@ -181,6 +221,7 @@ console.log("Backend javobi:", data);
 
           <p className="mt-6 text-center text-gray-600">
             Already have an account?{" "}
+
             <Link
               href="/login"
               className="font-semibold text-blue-600 hover:text-blue-800"
@@ -196,3 +237,4 @@ console.log("Backend javobi:", data);
     </div>
   );
 }
+

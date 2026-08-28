@@ -14,38 +14,41 @@ const sendResponse = require("../utils/response");
 const LoginActivity = require("../models/LoginActivity");
 const createNotification = require("../utils/createNotification");
 
-
 const register = asyncHandler(async (req, res) => {
   console.log("========== REGISTER START ==========");
   console.log("REQ BODY:", req.body);
 
-  const { name, password } = req.body;
+  const { name, email: rawEmail, password } = req.body;
 
-  if (!name || !req.body.email || !password) {
+  if (!name || !rawEmail || !password) {
     return res.status(400).json({
+      success: false,
       message: "Name, email and password are required",
     });
   }
 
-  const email = req.body.email.trim().toLowerCase();
+  const email = rawEmail.trim().toLowerCase();
 
   console.log("NORMALIZED EMAIL:", email);
 
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email })
+    .setOptions({ includeDeleted: true });
 
-  console.log("EXISTING USER:", existingUser ? "YES" : "NO");
+  console.log(
+    "EXISTING USER:",
+    existingUser ? "YES" : "NO"
+  );
 
-  if (existingUser) {
+  if (existingUser && !existingUser.isDeleted) {
     return res.status(400).json({
+      success: false,
       message: "Email already exists",
     });
   }
 
   console.log("BEFORE BCRYPT HASH");
-  
-  console.log("BEFORE BCRYPT");
+
   const hashedPassword = await bcrypt.hash(password, 10);
-  console.log("AFTER BCRYPT");
 
   console.log("AFTER BCRYPT HASH");
 
@@ -53,34 +56,55 @@ const register = asyncHandler(async (req, res) => {
     .randomBytes(32)
     .toString("hex");
 
+  if (existingUser && existingUser.isDeleted) {
+    console.log(
+      "RESTORING DELETED USER:",
+      existingUser._id
+    );
+
+    existingUser.name = name;
+    existingUser.email = email;
+    existingUser.password = hashedPassword;
+    existingUser.isDeleted = false;
+    existingUser.isVerified = false;
+    existingUser.verificationToken = verificationToken;
+    existingUser.verificationExpire =
+      Date.now() + 1000 * 60 * 60;
+
+    existingUser.status = "active";
+    existingUser.refreshToken = "";
+    existingUser.resetOTP = "";
+    existingUser.resetOTPExpire = null;
+    existingUser.twoFactorEnabled = false;
+    existingUser.twoFactorSecret = "";
+
+    await existingUser.save();
+
+    console.log(
+      "DELETED USER RESTORED:",
+      existingUser._id
+    );
+
+    return sendResponse(
+      res,
+      201,
+      true,
+      "Registration successful. Please verify your email."
+    );
+  }
+
   const user = new User({
     name,
     email,
     password: hashedPassword,
     verificationToken,
-    verificationExpire: Date.now() + 1000 * 60 * 60,
+    verificationExpire:
+      Date.now() + 1000 * 60 * 60,
   });
 
   await user.save();
 
   console.log("USER SAVED:", user._id);
-
-  const verificationLink =
-    `https://angrygsmservice.com/verify-email/${verificationToken}`;
-
-  console.log("VERIFICATION LINK:", verificationLink);
-
-  await sendEmail(
-    user.email,
-    "Email Verification",
-    `Please click the link below to verify your email:
-
-${verificationLink}
-
-This verification link will expire in 1 hour.`
-  );
-
-  console.log("EMAIL SENT SUCCESSFULLY");
 
   return sendResponse(
     res,

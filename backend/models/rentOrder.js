@@ -20,6 +20,7 @@ const rentOrderSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // Service'da belgilangan rental duration
     duration: {
       type: Number,
       required: true,
@@ -32,19 +33,38 @@ const rentOrderSchema = new mongoose.Schema(
       required: true,
     },
 
+    // User order bergan vaqt
     startTime: {
       type: Date,
       required: true,
     },
 
+    // Rent haqiqatan tugagan vaqt
     endTime: {
       type: Date,
-      required: true,
+      default: null,
+    },
+
+    // Admin orderni aktiv qilgan vaqt
+    activatedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Admin tomonidan bekor qilingan vaqt
+    cancelledAt: {
+      type: Date,
+      default: null,
     },
 
     status: {
       type: String,
-      enum: ["pending", "active", "completed", "cancelled"],
+      enum: [
+        "pending",
+        "active",
+        "completed",
+        "cancelled",
+      ],
       default: "pending",
     },
 

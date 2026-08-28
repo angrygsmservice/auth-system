@@ -80,6 +80,7 @@ export default function AdminPage() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -1486,11 +1487,8 @@ export default function AdminPage() {
               </Pie>
 
               <Tooltip
-                formatter={(
-                  value: number,
-                  name: string
-                ) => [
-                  `${value} users`,
+                formatter={(value, name) => [
+                  `${value ?? 0} users`,
                   name,
                 ]}
                 contentStyle={{
@@ -2221,6 +2219,17 @@ export default function AdminPage() {
 
                       <button
                         className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition"
+                        onClick={() =>
+                          setEditingUser({
+                            ...user,
+                          })
+                        }
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition"
                         onClick={() => {
                           console.log("MAKE USER BUTTON CLICKED");
     
@@ -2775,6 +2784,258 @@ export default function AdminPage() {
             className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white"
           >
             Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {selectedUser && (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4"
+      onClick={() => setSelectedUser(null)}
+    >
+      <div
+        className={`w-full max-w-md rounded-xl p-6 shadow-xl ${
+          darkMode
+            ? "bg-gray-800 text-white"
+            : "bg-white text-gray-900"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold">
+            User Details
+          </h2>
+
+          <button
+            type="button"
+            onClick={() => setSelectedUser(null)}
+            className={`rounded-lg px-3 py-1 text-sm ${
+              darkMode
+                ? "bg-gray-700 text-white hover:bg-gray-600"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-gray-500">
+              Name
+            </p>
+            <p className="font-semibold">
+              {selectedUser.name}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">
+              Email
+            </p>
+            <p className="font-semibold">
+              {selectedUser.email}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">
+              Role
+            </p>
+            <p className="font-semibold">
+              {selectedUser.role}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-500">
+              Created At
+            </p>
+            <p className="font-semibold">
+              {selectedUser.createdAt
+                ? new Date(
+                    selectedUser.createdAt
+                  ).toLocaleString()
+                : "N/A"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-6">
+          <button
+            type="button"
+            onClick={() => setSelectedUser(null)}
+            className="px-4 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+    {editingUser && (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4"
+      onClick={() => setEditingUser(null)}
+    >
+      <div
+        className={`w-full max-w-md rounded-xl p-6 shadow-xl ${
+          darkMode
+            ? "bg-gray-800 text-white"
+            : "bg-white text-gray-900"
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold">
+            Edit User
+          </h2>
+
+         <button
+            type="button"
+            onClick={() => setEditingUser(null)}
+            className={`rounded-lg px-3 py-1 text-sm ${
+              darkMode
+                ? "bg-gray-700 text-white hover:bg-gray-600"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Close
+          </button>
+        </div>
+
+        {/* NAME */}
+        <div className="mb-4">
+          <label className="mb-2 block text-sm font-semibold">
+            Name
+          </label>
+
+          <input
+            type="text"
+            value={editingUser.name}
+            onChange={(e) =>
+              setEditingUser({
+                ...editingUser,
+                name: e.target.value,
+              })
+            }
+            className={`w-full rounded-lg border px-4 py-3 outline-none ${
+              darkMode
+                ? "border-gray-700 bg-gray-700 text-white"
+                : "border-gray-200 bg-gray-50 text-gray-900"
+            }`}
+          />
+        </div>
+
+        {/* EMAIL */}
+        <div className="mb-4">
+          <label className="mb-2 block text-sm font-semibold">
+            Email
+          </label>
+
+          <input
+            type="email"
+            value={editingUser.email}
+            onChange={(e) =>
+              setEditingUser({
+                ...editingUser,
+                email: e.target.value,
+              })
+            }
+            className={`w-full rounded-lg border px-4 py-3 outline-none ${
+              darkMode
+                ? "border-gray-700 bg-gray-700 text-white"
+                : "border-gray-200 bg-gray-50 text-gray-900"
+            }`}
+          />
+        </div>
+
+        {/* ROLE */}
+        <div className="mb-6">
+          <label className="mb-2 block text-sm font-semibold">
+            Role
+          </label>
+
+          <select
+            value={editingUser.role}
+            onChange={(e) =>
+              setEditingUser({
+                ...editingUser,
+                role: e.target.value,
+              })
+            }
+            className={`w-full rounded-lg border px-4 py-3 outline-none ${
+              darkMode
+                ? "border-gray-700 bg-gray-700 text-white"
+                : "border-gray-200 bg-gray-50 text-gray-900"
+            }`}
+          >
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setEditingUser(null)}
+            className="px-4 py-2 rounded-lg bg-gray-500 hover:bg-gray-600 text-white"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              if (!editingUser) return;
+
+              try {
+                const res = await API.put(
+                  `/auth/admin/users/${editingUser._id}`,
+                  {
+                    name: editingUser.name,
+                    email: editingUser.email,
+                    role: editingUser.role,
+                  }
+                );
+
+                console.log(
+                  "UPDATED USER:",
+                  res.data
+                );
+  
+                setUsers((prevUsers) =>
+                  prevUsers.map((user) =>
+                    user._id === editingUser._id
+                      ? res.data.data
+                      : user
+                  )
+               );
+
+                setEditingUser(null);
+
+                alert(
+                  "User updated successfully"
+                );
+              } catch (error: any) {
+                console.log(
+                  "UPDATE USER ERROR:",
+                  error
+                );
+
+                alert(
+                  error?.response?.data?.message ||
+                   "Failed to update user"
+                );
+              }
+            }}
+            className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white"
+          >
+            Save
           </button>
         </div>
       </div>

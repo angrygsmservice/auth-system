@@ -533,21 +533,43 @@ export default function AdminOrdersPage() {
                     }}
                     className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
                   >
-                    <option value="pending">
-                      Pending
-                    </option>
+                    {selectedOrder?.orderType === "rent" ? (
+                      <>
+                        <option value="pending">
+                          Pending
+                        </option>
 
-                    <option value="processing">
-                      Processing
-                    </option>
+                        <option value="active">
+                          Active
+                        </option>
 
-                    <option value="completed">
-                      Completed
-                    </option>
+                        <option value="completed">
+                          Completed
+                        </option>
 
-                    <option value="cancelled">
-                      Cancelled
-                    </option>
+                        <option value="cancelled">
+                          Cancelled
+                        </option>
+                       </>
+                     ) : (
+                       <>
+                        <option value="pending">
+                          Pending
+                        </option>
+
+                        <option value="processing">
+                          Processing
+                        </option>
+
+                        <option value="completed">
+                          Completed
+                        </option>
+
+                        <option value="cancelled">
+                          Cancelled
+                        </option>
+                      </>
+                    )}
 
                   </select>
 
@@ -613,6 +635,161 @@ export default function AdminOrdersPage() {
                 </p>
 
               </div>
+
+              {/* =====================================================
+                  RENT ORDER INFORMATION
+              ===================================================== */}
+
+              {selectedOrder?.orderType === "rent" && (
+                <div className="mt-4 rounded-xl border border-gray-800 bg-gray-950 p-4">
+
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Rent Information
+                  </p>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+
+                    {/* DURATION */}
+
+                    <div>
+                      <p className="text-xs text-gray-500">
+                        Duration
+                      </p>
+
+                      <p className="mt-1 font-semibold text-white">
+                        {selectedOrder?.duration ?? "-"}{" "}
+                        {selectedOrder?.durationUnit ?? ""}
+                      </p>
+                    </div>
+
+                    {/* START TIME */}
+
+                    <div>
+                      <p className="text-xs text-gray-500">
+                        Start Time
+                      </p>
+
+                      <p className="mt-1 text-sm text-white">
+                        {selectedOrder?.startTime
+                          ? new Date(
+                              selectedOrder.startTime
+                            ).toLocaleString()
+                          : "-"}
+                      </p>
+                    </div>
+
+                    {/* END TIME */}
+
+                    <div>
+                      <p className="text-xs text-gray-500">
+                        End Time
+                      </p>
+
+                      <p className="mt-1 text-sm text-white">
+                        {selectedOrder?.endTime
+                          ? new Date(
+                              selectedOrder.endTime
+                            ).toLocaleString()
+                          : "-"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                </div>
+              )}
+
+              {/* =====================================================
+                  RENT CREDENTIALS
+              ===================================================== */}
+
+              {selectedOrder?.orderType === "rent" && (
+                <div className="mt-4 rounded-xl border border-gray-800 bg-gray-950 p-4">
+
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Rent Credentials
+                  </p>
+
+                  {/* LOGIN */}
+
+                  <div className="mt-4">
+                    <label className="text-xs text-gray-500">
+                      Login
+                    </label>
+
+                    <input
+                      type="text"
+                      value={
+                        selectedOrder?.credentials?.login || ""
+                      }
+                      onChange={(e) => {
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          credentials: {
+                            ...selectedOrder.credentials,
+                            login: e.target.value,
+                          },
+                        });
+                      }}
+                      placeholder="Enter login"
+                      className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* PASSWORD */}
+
+                  <div className="mt-4">
+                    <label className="text-xs text-gray-500">
+                      Password
+                    </label>
+
+                    <input
+                      type="text"
+                      value={
+                        selectedOrder?.credentials?.password || ""
+                      }
+                      onChange={(e) => {
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          credentials: {
+                            ...selectedOrder.credentials,
+                            password: e.target.value,
+                          },
+                        });
+                      }}
+                      placeholder="Enter password"
+                      className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* NOTE */}
+
+                  <div className="mt-4">
+                    <label className="text-xs text-gray-500">
+                      Note
+                    </label>
+
+                    <textarea
+                      value={
+                        selectedOrder?.credentials?.note || ""
+                      }
+                      onChange={(e) => {
+                        setSelectedOrder({
+                          ...selectedOrder,
+                          credentials: {
+                            ...selectedOrder.credentials,
+                            note: e.target.value,
+                          },
+                        });
+                      }}
+                      placeholder="Additional note..."
+                      rows={4}
+                      className="mt-2 w-full resize-none rounded-lg border border-gray-700 bg-gray-900 px-3 py-3 text-sm text-white outline-none placeholder:text-gray-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                </div>
+              )}
 
               {/* =====================================================
                   ORDER INFORMATION
@@ -770,6 +947,12 @@ export default function AdminOrdersPage() {
 
                   try {
 
+                    console.log("SELECTED ORDER BEFORE SAVE:", selectedOrder);
+                    console.log("CREDENTIALS BEFORE SAVE:", selectedOrder?.credentials);
+                    console.log("LOGIN:", selectedOrder?.credentials?.login);
+                    console.log("PASSWORD:", selectedOrder?.credentials?.password);
+                    console.log("NOTE:", selectedOrder?.credentials?.note);
+
                     console.log(
                       "BEFORE SAVE:",
                       {
@@ -781,17 +964,26 @@ export default function AdminOrdersPage() {
                       }
                     );
 
-                    const res =
-                      await API.put(
-                        `/admin/orders/${selectedOrder._id}/status`,
-                        {
-                          status:
-                            selectedOrder.status,
-                          adminReply:
-                            selectedOrder.adminReply ||
-                            "",
-                        }
-                      );
+                    const res = await API.put(
+                      `/admin/orders/${selectedOrder._id}/status`,
+                      {
+                        status: selectedOrder.status,
+                        adminReply: selectedOrder.adminReply || "",
+
+                        ...(selectedOrder.orderType === "rent"
+                          ? {
+                              login:
+                                selectedOrder.credentials?.login || "",
+
+                              password:
+                                selectedOrder.credentials?.password || "",
+
+                              note:
+                                selectedOrder.credentials?.note || "",
+                            }
+                          : {}),
+                      }
+                    );
 
                     console.log(
                       "STATUS UPDATED:",

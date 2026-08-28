@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import AuthGuard from "@/components/AuthGuard";
+import API from "@/lib/api";
 
 interface RentOrder {
   _id: string;
@@ -9,24 +10,29 @@ interface RentOrder {
   user: {
     _id: string;
     name: string;
-    email: string;
+    email?: string;
   };
 
   service: {
     _id: string;
     name: string;
     description?: string;
-    duration: number;
-    durationUnit: string;
     price: number;
+    durationMin?: number;
+    durationMax?: number;
+    durationUnit?: string;
   };
+
 
   price: number;
   duration: number;
   durationUnit: string;
 
   startTime: string;
-  endTime: string;
+  endTime: string | null;
+
+  activatedAt?: string | null;
+  cancelledAt?: string | null;
 
   status: "pending" | "active" | "completed" | "cancelled";
 
@@ -63,34 +69,18 @@ export default function RentOrdersPage() {
   // GET ALL RENT ORDERS
   // =========================================================
 
+  // =========================================================
+  // GET ALL RENT ORDERS
+  // =========================================================
+
   const fetchRentOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("accessToken");
+      const response = await API.get("/rent");
 
-      const response = await fetch(
-        "http://localhost:3000/api/v1/rent",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-           "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Rent ordersni olishda xatolik"
-        );
-      }
-
-      setOrders(data.data || []);
+      setOrders(response.data.data || []);
     } catch (err) {
       console.error("FETCH RENT ORDERS ERROR:", err);
 
@@ -131,14 +121,13 @@ export default function RentOrdersPage() {
     orderId: string,
     newStatus: RentOrder["status"]
   ) => {
-
     const confirmed = window.confirm(
       `Are you sure you want to change the order status to "${formatStatus(
         newStatus
       )}"?`
     );
 
-    if (!confirmed) {
+   if (!confirmed) {
       return;
     }
 
@@ -146,37 +135,19 @@ export default function RentOrdersPage() {
       setUpdatingId(orderId);
       setError("");
 
-      const token = localStorage.getItem("accessToken");
-
-      const response = await fetch(
-         `http://localhost:3000/api/v1/rent/${orderId}/status`,
+      const response = await API.put(
+        `/rent/${orderId}/status`,
         {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            status: newStatus,
-          }),
+          status: newStatus,
         }
       );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Statusni yangilashda xatolik"
-        );
-      }
 
       setOrders((currentOrders) =>
         currentOrders.map((order) =>
           order._id === orderId
             ? {
                 ...order,
-                ...data.data,
+                ...response.data.data,
               }
             : order
         )
@@ -248,7 +219,11 @@ export default function RentOrdersPage() {
     );
   };
 
-  const formatDateTime = (date: string) => {
+  const formatDateTime = (date: string | null | undefined) => {
+    if (!date) {
+      return "—";
+    }
+
     return new Date(date).toLocaleString();
   };
 
@@ -257,8 +232,6 @@ export default function RentOrdersPage() {
 
     const matchesSearch =
       !searchText ||
-      (order.user?.name || "").toLowerCase().includes(searchText) ||
-      (order.user?.email || "").toLowerCase().includes(searchText) ||
       (order.service?.name || "").toLowerCase().includes(searchText);
 
     const matchesStatus =
@@ -665,9 +638,7 @@ export default function RentOrdersPage() {
                     </p>
 
                     <p className="mt-1 text-sm text-gray-300">
-                      {selectedOrder.status === "pending"
-                        ? "Waiting for activation"
-                        : formatDateTime(selectedOrder.startTime)}
+                      {formatDateTime(selectedOrder.startTime)}
                     </p>
                   </div>
 
@@ -678,9 +649,9 @@ export default function RentOrdersPage() {
                     </p>
 
                     <p className="mt-1 text-sm text-gray-300">
-                      {selectedOrder.status === "pending"
-                        ? "Waiting for activation"
-                        : formatDateTime(selectedOrder.endTime)}
+                      {selectedOrder.endTime
+                        ? formatDateTime(selectedOrder.endTime)
+                        : "Waiting for admin"}
                     </p>
                   </div>
 

@@ -2,8 +2,6 @@ const express = require("express");
 console.log("AUTH ROUTES LOADED");
 const router = express.Router();
 
-const authController = require("../controllers/authController");
-
 const upload = require("../middleware/upload");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
@@ -14,7 +12,6 @@ const User = require("../models/User");
 const Activity = require("../models/Activity");
 const createNotification = require("../utils/createNotification");
 const LoginActivity = require("../models/LoginActivity");
-
 
 const {
   register,
@@ -35,12 +32,10 @@ const {
   verifyTwoFactor,
   loginWithTwoFactor,
   logoutDevice,
+  logoutOtherDevices,
   updateUser,
-} = require("../controllers/authController");
-
-const {
   uploadAvatar,
-} = require("../controllers/userController");
+} = require("../controllers/authController");
 
 const {
   registerValidation,
@@ -426,7 +421,7 @@ router.delete("/logout-device/:sessionId", auth, logoutDevice);
 router.delete(
   "/logout-other-devices",
   auth,
-  authController.logoutOtherDevices
+  logoutOtherDevices
 );
 
 router.delete("/sessions/:id", auth, revokeSession);

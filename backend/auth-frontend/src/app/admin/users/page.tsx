@@ -34,7 +34,7 @@ export default function UsersPage() {
 
       const res = await API.get("/auth/admin/users");
 
-      console.log("USERS:", res.data);
+      console.log("USERS RESPONSE:", res.data);
 
       setUsers(res.data.users || []);
     } catch (error: any) {

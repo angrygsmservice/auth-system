@@ -967,34 +967,6 @@ export default function ProfilePage() {
 
         </div>
 
-        {/* BALANCE */}
-
-        <div className="flex items-center justify-between gap-4">
-
-          <span
-            className={`min-w-[80px] ${
-              darkMode
-                ? "text-gray-300"
-                : "text-gray-500"
-            }`}
-          >
-            {t.balance}
-           </span>
-
-           <button
-             type="button"
-             onClick={() => router.push("/deposit")}
-             className={`font-semibold text-right hover:underline ${
-               darkMode
-                 ? "text-white"
-                 : "text-gray-700"
-             }`}
-           >
-             ${Number(user.balance || 0).toFixed(2)}
-           </button>
-
-         </div>
-
         {/* PROFILE INFORMATION */}
 
         <div className="flex flex-col items-center gap-4 mt-8">

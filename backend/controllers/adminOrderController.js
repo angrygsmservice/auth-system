@@ -53,61 +53,41 @@ const getAllOrders = async (req, res) => {
     );
 
     // ===================================================
-    // SHOW RENT ORDERS
-    // ===================================================
-
-    console.log(
-      "6️⃣ RENT ORDERS DATA:"
-    );
-
-    console.log(
-      rentOrders.map((order) => ({
-        id: order._id,
-        user: order.user?.email,
-        service: order.service?.name,
-        status: order.status,
-        price: order.price,
-        duration: order.duration,
-        durationUnit: order.durationUnit,
-        startTime: order.startTime,
-        endTime: order.endTime,
-        createdAt: order.createdAt,
-      }))
-    );
-
-    // ===================================================
-    // CONVERT RENT ORDERS TO ADMIN ORDER FORMAT
+    // FORMAT RENT ORDERS
     // ===================================================
 
     const formattedRentOrders = rentOrders.map((order) => ({
       ...order.toObject(),
 
-      // Frontend rent order ekanini bilishi uchun
       orderType: "rent",
 
-      // Service
-      service: order.service,
-
-      // Rent information
       duration: order.duration,
       durationUnit: order.durationUnit,
+
       startTime: order.startTime,
       endTime: order.endTime,
 
-      // Status
       status: order.status,
 
-      // User
+      adminReply: order.adminReply || "",
+
+      credentials: {
+        login: order.credentials?.login || "",
+        password: order.credentials?.password || "",
+        note: order.credentials?.note || "",
+      },
+
       user: order.user,
+      service: order.service,
     }));
 
     console.log(
-      "7️⃣ FORMATTED RENT ORDERS:",
+      "6️⃣ FORMATTED RENT ORDERS:",
       formattedRentOrders.length
     );
 
     // ===================================================
-    // MARK NORMAL ORDERS
+    // FORMAT NORMAL ORDERS
     // ===================================================
 
     const formattedNormalOrders = normalOrders.map(
@@ -115,16 +95,18 @@ const getAllOrders = async (req, res) => {
         ...order.toObject(),
 
         orderType: "normal",
+
+        adminReply: order.adminReply || "",
       })
     );
 
     console.log(
-      "8️⃣ FORMATTED NORMAL ORDERS:",
+      "7️⃣ FORMATTED NORMAL ORDERS:",
       formattedNormalOrders.length
     );
 
     // ===================================================
-    // COMBINE BOTH
+    // COMBINE
     // ===================================================
 
     const allOrders = [
@@ -143,7 +125,7 @@ const getAllOrders = async (req, res) => {
     );
 
     // ===================================================
-    // FINAL DEBUG
+    // DEBUG
     // ===================================================
 
     console.log("====================================");
@@ -161,7 +143,6 @@ const getAllOrders = async (req, res) => {
       allOrders.length
     );
 
-    console.log("====================================");
     console.log("ORDER TYPES:");
 
     console.log(
@@ -180,7 +161,7 @@ const getAllOrders = async (req, res) => {
     // RESPONSE
     // ===================================================
 
-    return res.json({
+    return res.status(200).json({
       success: true,
       data: allOrders,
     });
@@ -201,46 +182,52 @@ const getAllOrders = async (req, res) => {
 
 
 // =====================================================
-// ADMIN: UPDATE NORMAL ORDER STATUS
+// ADMIN: UPDATE ORDER
+// Supports normal + rent orders
 // =====================================================
+
 const updateOrderStatus = async (req, res) => {
   try {
-    const { status, adminReply } = req.body;
+    const { id } = req.params;
 
-    const allowedStatus = [
-      "pending",
-      "processing",
-      "completed",
-      "cancelled",
-    ];
+    const {
+      status,
+      adminReply,
+      login,
+      password,
+      note,
+    } = req.body;
 
-    if (!allowedStatus.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
-    }
+    console.log("\n====================================");
+    console.log("🔥 ADMIN UPDATE ORDER");
+    console.log("ORDER ID:", id);
+    console.log("STATUS:", status);
+    console.log("ADMIN REPLY:", adminReply);
+    console.log("LOGIN PROVIDED:", login !== undefined);
+    console.log("PASSWORD PROVIDED:", password !== undefined);
+    console.log("NOTE PROVIDED:", note !== undefined);
+    console.log("====================================");
 
-    // =====================================================
-    // 1. AVVAL NORMAL ORDERNI QIDIRAMIZ
-    // =====================================================
+    // ===================================================
+    // FIND ORDER
+    // ===================================================
 
-    let order = await Order.findById(req.params.id);
+    let order = await Order.findById(id);
 
     let orderType = "normal";
 
-    // =====================================================
-    // 2. NORMAL ORDER TOPILMASA RENT ORDERNI QIDIRAMIZ
-    // =====================================================
+    // ===================================================
+    // IF NOT NORMAL → TRY RENT
+    // ===================================================
 
     if (!order) {
-      order = await RentOrder.findById(req.params.id);
+      order = await RentOrder.findById(id);
       orderType = "rent";
     }
 
-    // =====================================================
-    // 3. UMUMAN TOPILMASA
-    // =====================================================
+    // ===================================================
+    // NOT FOUND
+    // ===================================================
 
     if (!order) {
       return res.status(404).json({
@@ -249,63 +236,246 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // =====================================================
-    // 4. STATUSNI UPDATE
-    // =====================================================
+    // ===================================================
+    // STATUS VALIDATION
+    // ===================================================
+
+    const normalStatuses = [
+      "pending",
+      "processing",
+      "completed",
+      "cancelled",
+    ];
+
+    const rentStatuses = [
+      "pending",
+      "active",
+      "completed",
+      "cancelled",
+    ];
+
+    const allowedStatuses =
+      orderType === "rent"
+        ? rentStatuses
+        : normalStatuses;
+
+    if (
+      !status ||
+      !allowedStatuses.includes(status)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          orderType === "rent"
+            ? "Invalid rent order status. Allowed: pending, active, completed, cancelled"
+            : "Invalid order status. Allowed: pending, processing, completed, cancelled",
+      });
+    }
+
+    // ===================================================
+    // ADMIN REPLY
+    // ===================================================
+
+    order.adminReply =
+      typeof adminReply === "string"
+        ? adminReply.trim()
+        : "";
+
+    // ===================================================
+    // REPLY INFORMATION
+    // ===================================================
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        order,
+        "repliedAt"
+      )
+    ) {
+      order.repliedAt = new Date();
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        order,
+        "repliedBy"
+      )
+    ) {
+      order.repliedBy = req.user.id;
+    }
+
+    // ===================================================
+    // STATUS
+    // ===================================================
 
     order.status = status;
 
-    order.adminReply = adminReply || "";
-
-    order.repliedAt = new Date();
-
-    order.repliedBy = req.user.id;
+    // ===================================================
+    // CANCEL REASON
+    // ===================================================
 
     if (status === "cancelled") {
-      order.cancelReason = "Cancelled by admin";
+      if (
+        Object.prototype.hasOwnProperty.call(
+          order,
+          "cancelReason"
+        )
+      ) {
+        order.cancelReason =
+          "Cancelled by admin";
+      }
     }
+
+    // ===================================================
+    // RENT CREDENTIALS
+    // =====================================================
+
+    if (orderType === "rent") {
+      const hasLogin =
+        login !== undefined;
+
+      const hasPassword =
+        password !== undefined;
+
+      const hasNote =
+        note !== undefined;
+
+      // -----------------------------------------------
+      // If any credential field is sent,
+      // update credentials
+      // -----------------------------------------------
+
+      if (
+        hasLogin ||
+        hasPassword ||
+        hasNote
+      ) {
+        const currentCredentials =
+          order.credentials || {};
+
+        order.credentials = {
+          login:
+            hasLogin
+              ? String(login || "").trim()
+              : currentCredentials.login || "",
+
+          password:
+            hasPassword
+              ? String(password || "").trim()
+              : currentCredentials.password || "",
+
+          note:
+            hasNote
+              ? String(note || "").trim()
+              : currentCredentials.note || "",
+        };
+      }
+    }
+
+    // ===================================================
+    // SAVE
+    // ===================================================
 
     await order.save();
 
-    // =====================================================
-    // 5. UPDATED ORDERNI QAYTA OLISH
-    // =====================================================
+    console.log(
+      "✅ ORDER SAVED:",
+      order._id
+    );
+
+    console.log(
+      "TYPE:",
+      orderType
+    );
+
+    console.log(
+      "STATUS:",
+      order.status
+    );
+
+    if (orderType === "rent") {
+      console.log(
+        "CREDENTIALS:",
+        {
+          login:
+            order.credentials?.login || "",
+          password:
+            order.credentials?.password
+              ? "***"
+              : "",
+          note:
+            order.credentials?.note || "",
+        }
+      );
+    }
+
+    // ===================================================
+    // GET UPDATED ORDER
+    // ===================================================
 
     let updatedOrder;
 
     if (orderType === "rent") {
-      updatedOrder = await RentOrder.findById(order._id)
-        .populate("user", "name email")
-        .populate(
-          "service",
-          "name description category price durationMin durationMax durationUnit"
-        );
+      updatedOrder =
+        await RentOrder.findById(
+          order._id
+        )
+          .populate(
+            "user",
+            "name email"
+          )
+          .populate(
+            "service",
+            "name description category price durationMin durationMax durationUnit"
+          );
     } else {
-      updatedOrder = await Order.findById(order._id)
-        .populate("user", "name email")
-        .populate("service", "name category price")
-        .populate("processedBy", "name email");
+      updatedOrder =
+        await Order.findById(
+          order._id
+        )
+          .populate(
+            "user",
+            "name email"
+          )
+          .populate(
+            "service",
+            "name category price"
+          )
+          .populate(
+            "processedBy",
+            "name email"
+          );
     }
 
-    // =====================================================
-    // 6. RESPONSE
-    // =====================================================
+    // ===================================================
+    // RESPONSE
+    // ===================================================
 
-    return res.json({
+    return res.status(200).json({
       success: true,
-      message: "Order status updated",
+      message:
+        orderType === "rent"
+          ? "Rent order updated successfully"
+          : "Order status updated successfully",
+
       data: {
         ...updatedOrder.toObject(),
+
         orderType,
       },
     });
 
   } catch (error) {
-    console.error("UPDATE STATUS ERROR:", error);
+    console.error(
+      "❌ UPDATE ADMIN ORDER ERROR:"
+    );
+
+    console.error(error);
 
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message:
+        error.message ||
+        "Failed to update order",
     });
   }
 };

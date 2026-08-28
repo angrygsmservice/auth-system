@@ -173,18 +173,23 @@ export default function LoginPage() {
         res.data.data?.accessToken ||
         res.data.accessToken;
 
-      console.log("ACCESS TOKEN:", accessToken);
+      if (!accessToken) {
+        throw new Error("Access token olinmadi");
+      }
 
       localStorage.setItem("accessToken", accessToken);
 
-      console.log(
-        "SAVED TOKEN:",
-        localStorage.getItem("accessToken")
-      );
+      const userRole = res.data.data?.user?.role;
+
+      console.log("USER ROLE:", userRole);
 
       toast.success(t.loginSuccess);
-      
-      router.push("/services");
+
+      if (userRole === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/services");
+      }
     } catch (error: any) {
       console.log("LOGIN ERROR:", error);
 

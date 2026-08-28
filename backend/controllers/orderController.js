@@ -57,6 +57,12 @@ const createOrder = async (req, res) => {
       });
     }
 
+    console.log("ORDER USER:", {
+      id: user._id,
+      email: user.email,
+      balance: user.balance,
+    });
+
     if (user.balance < servicePrice) {
       return res.status(400).json({
         success: false,
