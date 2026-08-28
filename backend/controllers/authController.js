@@ -42,8 +42,10 @@ const register = asyncHandler(async (req, res) => {
   }
 
   console.log("BEFORE BCRYPT HASH");
-
+  
+  console.log("BEFORE BCRYPT");
   const hashedPassword = await bcrypt.hash(password, 10);
+  console.log("AFTER BCRYPT");
 
   console.log("AFTER BCRYPT HASH");
 
