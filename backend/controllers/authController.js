@@ -16,43 +16,69 @@ const createNotification = require("../utils/createNotification");
 
 
 const register = asyncHandler(async (req, res) => {
-  const existingUser = await User.findOne({
-    email: req.body.email
-  });
+  console.log("========== REGISTER START ==========");
+  console.log("REQ BODY:", req.body);
 
-  if (existingUser) {
+  const { name, password } = req.body;
+
+  if (!name || !req.body.email || !password) {
     return res.status(400).json({
-      message: "Email already exists"
+      message: "Name, email and password are required",
     });
   }
 
-  const hashedPassword = await bcrypt.hash(
-    req.body.password,
-    10
-  );
+  const email = req.body.email.trim().toLowerCase();
+
+  console.log("NORMALIZED EMAIL:", email);
+
+  const existingUser = await User.findOne({ email });
+
+  console.log("EXISTING USER:", existingUser ? "YES" : "NO");
+
+  if (existingUser) {
+    return res.status(400).json({
+      message: "Email already exists",
+    });
+  }
+
+  console.log("BEFORE BCRYPT HASH");
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  console.log("AFTER BCRYPT HASH");
 
   const verificationToken = crypto
     .randomBytes(32)
     .toString("hex");
 
   const user = new User({
-    name: req.body.name,
-    email: req.body.email,
+    name,
+    email,
     password: hashedPassword,
     verificationToken,
-    verificationExpire: Date.now() + 1000 * 60 * 60 // 1 soat
+    verificationExpire: Date.now() + 1000 * 60 * 60,
   });
 
   await user.save();
 
+  console.log("USER SAVED:", user._id);
+
   const verificationLink =
-    `http://localhost:3000/api/v1/auth/verify-email/${verificationToken}`;
+    `https://angrygsmservice.com/verify-email/${verificationToken}`;
+
+  console.log("VERIFICATION LINK:", verificationLink);
 
   await sendEmail(
     user.email,
     "Email Verification",
-    `Please click the link below to verify your email:\n\n${verificationLink}`
+    `Please click the link below to verify your email:
+
+${verificationLink}
+
+This verification link will expire in 1 hour.`
   );
+
+  console.log("EMAIL SENT SUCCESSFULLY");
 
   return sendResponse(
     res,
@@ -60,24 +86,27 @@ const register = asyncHandler(async (req, res) => {
     true,
     "Registration successful. Please verify your email."
   );
-
- });
+});
   
 const login = asyncHandler(async (req, res) => {
-
+  console.log("========== LOGIN START ==========");
   console.log("REQ BODY:", req.body);
 
   const user = await User.findOne({
     email: req.body.email,
   }).select("+password");
 
-  console.log("FOUND USER:", user);
+  console.log("========== USER QUERY DONE ==========");
+  console.log("FOUND USER:", !!user);
 
   if (!user) {
     return res.status(400).json({
       message: "User not found",
     });
   }
+
+  console.log("USER VERIFIED:", user.isVerified);
+  console.log("USER STATUS:", user.status);
 
   if (!user.isVerified) {
     return res.status(403).json({
@@ -91,10 +120,15 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 
+  console.log("========== BEFORE BCRYPT ==========");
+
   const isMatch = await bcrypt.compare(
     req.body.password,
     user.password
   );
+
+  console.log("========== BCRYPT DONE ==========");
+  console.log("PASSWORD MATCH:", isMatch);
 
   if (!isMatch) {
     return res.status(400).json({
@@ -102,7 +136,12 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 
+  console.log("========== BEFORE SETTINGS ==========");
+
   const settings = await Settings.findOne();
+
+  console.log("========== SETTINGS DONE ==========");
+  console.log(settings);
 
   if (
     settings?.maintenanceMode &&
@@ -113,20 +152,8 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 
-  if (user.twoFactorEnabled) {
-    return sendResponse(
-      res,
-      200,
-      true,
-      "Two-factor authentication required",
-      {
-        requiresTwoFactor: true,
-        email: user.email,
-      }
-    );
-  }
+  console.log("========== BEFORE JWT ==========");
 
-  // BU YERDAN KEYIN accessToken va refreshToken yaratadigan kod boshlanadi
   const accessToken = jwt.sign(
     {
       id: user._id,
@@ -138,6 +165,8 @@ const login = asyncHandler(async (req, res) => {
     }
   );
 
+  console.log("ACCESS TOKEN CREATED");
+
   const refreshToken = jwt.sign(
     {
       id: user._id,
@@ -148,6 +177,8 @@ const login = asyncHandler(async (req, res) => {
     }
   );
 
+  console.log("REFRESH TOKEN CREATED");
+
   const hashedRefreshToken = crypto
     .createHash("sha256")
     .update(refreshToken)
@@ -155,14 +186,23 @@ const login = asyncHandler(async (req, res) => {
 
   user.refreshToken = hashedRefreshToken;
 
+  console.log("========== BEFORE USER SAVE ==========");
+
   await user.save();
 
-  const parser = new UAParser(req.headers["user-agent"]);
+  console.log("========== USER SAVE DONE ==========");
+
+  // =================================================
+  // CREATE LOGIN SESSION
+  // =================================================
+
+  const parser = new UAParser(
+    req.headers["user-agent"]
+  );
+
   const result = parser.getResult();
 
-  console.log(result);
-
-  const session = await Session.create({
+  await Session.create({
     user: user._id,
     refreshToken: hashedRefreshToken,
     device: result.device.type || "Desktop",
@@ -172,34 +212,21 @@ const login = asyncHandler(async (req, res) => {
     isActive: true,
   });
 
-  console.log("SESSION CREATED:", session);
+  console.log("LOGIN SESSION CREATED");
 
   res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite:
-      process.env.NODE_ENV === "production"
-        ? "none"
-        : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
-  console.log("COOKIE SAQLANDI:", refreshToken);
+  console.log("REFRESH TOKEN COOKIE SET");
 
-  console.log("Saving login activity...");
-
-  await LoginActivity.create({
-    user: user._id,
-  });
-
-  console.log("Login activity saved");
-
-  return sendResponse(
-    res,
-    200,
-    true,
-    "Login successful",
-    {
+  return res.json({
+    success: true,
+    message: "Login successful",
+    data: {
       accessToken,
       user: {
         id: user._id,
@@ -208,8 +235,8 @@ const login = asyncHandler(async (req, res) => {
         role: user.role,
         avatar: user.avatar,
       },
-    }
-  );
+    },
+  });
 });
 
 const getProfile = async (req, res) => {
@@ -404,6 +431,9 @@ const verifyOTP = asyncHandler(async (req, res) => {
       message: "User topilmadi"
     });
   }
+
+  console.log("BODY OTP:", otp);
+  console.log("DB OTP:", user.resetOTP);
 
   if (user.resetOTP !== otp) {
     return res.status(400).json({
@@ -789,17 +819,27 @@ const resendVerification = asyncHandler(async (req, res) => {
 
   await user.save();
 
+  const verificationLink =
+    `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+
+  console.log("VERIFICATION TOKEN:", verificationToken);
+  console.log("VERIFICATION LINK:", verificationLink);
+
   await sendEmail(
     user.email,
     "Email Verification",
-    `Please use the following verification token to verify your email:\n\n${verificationToken}`
+    `Please click the link below to verify your email:
+
+${verificationLink}
+
+This verification link will expire in 1 hour.`
   );
 
   return sendResponse(
     res,
     200,
     true,
-   "A new verification email has been sent"
+    "A new verification email has been sent"
   );
 });
 
