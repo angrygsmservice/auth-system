@@ -1,6 +1,8 @@
 const rateLimit = require("express-rate-limit");
 
 const authLimiter = rateLimit({
+  validate: false,
+  
   windowMs: 15 * 60 * 1000, // 15 daqiqa
   max: 5,
   standardHeaders: true,
