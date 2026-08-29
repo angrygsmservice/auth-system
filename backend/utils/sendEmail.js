@@ -11,13 +11,11 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, subject, text) => {
-  console.log("========== SEND EMAIL START ==========");
-  console.log("EMAIL KIMGA:", to);
-  console.log("EMAIL USER:", process.env.EMAIL_USER);
+  console.log("EMAIL_START:", to);
 
   await transporter.verify();
 
-  console.log("SMTP ULANDI");
+  console.log("SMTP_VERIFIED");
 
   const info = await transporter.sendMail({
     from: process.env.EMAIL_USER,
@@ -26,11 +24,15 @@ const sendEmail = async (to, subject, text) => {
     text,
   });
 
-  console.log("========== EMAIL YUBORILDI ==========");
-  console.log("MESSAGE ID:", info.messageId);
-  console.log("ACCEPTED:", info.accepted);
-  console.log("REJECTED:", info.rejected);
-  console.log("RESPONSE:", info.response);
+  console.log(
+    "EMAIL_RESULT:",
+    JSON.stringify({
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    })
+  );
 
   return info;
 };
