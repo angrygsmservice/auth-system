@@ -827,6 +827,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
     verificationToken: req.params.token
   });
 
+  console.log("VERIFY TOKEN RECEIVED:", req.params.token);
+
   if (!user) {
     return res.status(404).json({
       message: "Invalid verification token"
