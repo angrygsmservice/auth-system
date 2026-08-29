@@ -80,9 +80,9 @@ const register = asyncHandler(async (req, res) => {
 
     console.log("BEFORE USER SAVE");
 
-    await user.save();
+    await existingUser.save();
 
-    console.log("AFTER USER SAVE:", user._id);
+    console.log("AFTER USER SAVE:", existingUser._id);
 
     const verificationLink =
       `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
