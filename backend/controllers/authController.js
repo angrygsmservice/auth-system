@@ -80,18 +80,36 @@ const register = asyncHandler(async (req, res) => {
 
     await existingUser.save();
 
-    console.log(
-      "DELETED USER RESTORED:",
-      existingUser._id
-    );
+  console.log(
+    "DELETED USER RESTORED:",
+    existingUser._id
+  );
 
-    return sendResponse(
-      res,
-      201,
-      true,
-      "Registration successful. Please verify your email."
-    );
-  }
+  const verificationLink =
+    `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+
+  console.log("VERIFICATION TOKEN:", verificationToken);
+  console.log("VERIFICATION LINK:", verificationLink);
+
+  await sendEmail(
+    existingUser.email,
+    "Email Verification",
+    `Please click the link below to verify your email:
+
+  ${verificationLink}
+
+  This verification link will expire in 1 hour.`
+  );
+
+  console.log("VERIFICATION EMAIL SENT:", existingUser.email);
+
+  return sendResponse(
+    res,
+    201,
+    true,
+    "Registration successful. Please verify your email."
+  );
+}
 
   const user = new User({
     name,
@@ -105,6 +123,24 @@ const register = asyncHandler(async (req, res) => {
   await user.save();
 
   console.log("USER SAVED:", user._id);
+
+  const verificationLink =
+    `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+
+  console.log("VERIFICATION TOKEN:", verificationToken);
+  console.log("VERIFICATION LINK:", verificationLink);
+
+  await sendEmail(
+    user.email,
+    "Email Verification",
+    `Please click the link below to verify your email:
+
+  ${verificationLink}
+
+  This verification link will expire in 1 hour.`
+  );
+
+  console.log("VERIFICATION EMAIL SENT:", user.email);
 
   return sendResponse(
     res,
