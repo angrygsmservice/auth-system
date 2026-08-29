@@ -156,8 +156,10 @@ const login = asyncHandler(async (req, res) => {
   console.log("========== LOGIN START ==========");
   console.log("REQ BODY:", req.body);
 
+  const email = req.body.email.trim().toLowerCase();
+
   const user = await User.findOne({
-    email: req.body.email,
+    email,
   }).select("+password");
 
   console.log("========== USER QUERY DONE ==========");
