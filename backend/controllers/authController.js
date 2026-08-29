@@ -78,20 +78,21 @@ const register = asyncHandler(async (req, res) => {
     existingUser.twoFactorEnabled = false;
     existingUser.twoFactorSecret = "";
 
-    await existingUser.save();
+    console.log("BEFORE USER SAVE");
 
-  console.log(
-    "DELETED USER RESTORED:",
-    existingUser._id
-  );
+    await user.save();
 
-  const verificationLink =
-    `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+    console.log("AFTER USER SAVE:", user._id);
 
-  console.log("VERIFICATION TOKEN:", verificationToken);
-  console.log("VERIFICATION LINK:", verificationLink);
+    const verificationLink =
+      `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
 
-  await sendEmail(
+    console.log("VERIFICATION TOKEN:", verificationToken);
+    console.log("VERIFICATION LINK:", verificationLink);
+
+    console.log("BEFORE SEND EMAIL");
+
+    await sendEmail(
     existingUser.email,
     "Email Verification",
     `Please click the link below to verify your email:
