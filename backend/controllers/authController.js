@@ -85,7 +85,7 @@ const register = asyncHandler(async (req, res) => {
     console.log("AFTER USER SAVE:", existingUser._id);
 
     const verificationLink =
-      `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+        `https://backend-ten-dusky-24.vercel.app/api/v1/auth/verify-email/${verificationToken}`;
 
     console.log("VERIFICATION TOKEN:", verificationToken);
     console.log("VERIFICATION LINK:", verificationLink);
@@ -127,7 +127,7 @@ const register = asyncHandler(async (req, res) => {
   console.log("SAVED VERIFICATION TOKEN:", user.verificationToken);
 
   const verificationLink =
-    `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+      `https://backend-ten-dusky-24.vercel.app/api/v1/auth/verify-email/${verificationToken}`;
 
   console.log("VERIFICATION TOKEN:", verificationToken);
   console.log("VERIFICATION LINK:", verificationLink);
@@ -886,7 +886,7 @@ const resendVerification = asyncHandler(async (req, res) => {
   await user.save();
 
   const verificationLink =
-    `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
+      `https://backend-ten-dusky-24.vercel.app/api/v1/auth/verify-email/${verificationToken}`;
 
   console.log("VERIFICATION TOKEN:", verificationToken);
   console.log("VERIFICATION LINK:", verificationLink);
