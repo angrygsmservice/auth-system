@@ -825,19 +825,33 @@ const updateUser = asyncHandler(async (req, res) => {
 });
 
 const verifyEmail = asyncHandler(async (req, res) => {
-  const user = await User.findOne({
-    verificationToken: req.params.token
-  }).setOptions({ includeDeleted: true });
+  const { token } = req.params;
 
-  if (!user) {
-    return res.status(404).json({
-      message: "Invalid verification token"
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: "Verification token is required",
     });
   }
 
-  if (user.verificationExpire < Date.now()) {
+  const user = await User.findOne({
+    verificationToken: token,
+  }).setOptions({ includeDeleted: true });
+
+  if (!user) {
     return res.status(400).json({
-      message: "Verification token has expired"
+      success: false,
+      message: "Invalid verification token",
+    });
+  }
+
+  if (
+    !user.verificationExpire ||
+    user.verificationExpire.getTime() < Date.now()
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Verification token has expired",
     });
   }
 
