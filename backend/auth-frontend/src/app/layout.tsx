@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "AngryGsm",
   description: "Authentication System",
   icons: {
-    icon: "/logo.png",
+    icon: "/favicon.png",
   },
 };
 
@@ -47,3 +47,4 @@ export default function RootLayout({
     </html>
   );
 }
+
