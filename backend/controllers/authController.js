@@ -825,9 +825,7 @@ const updateUser = asyncHandler(async (req, res) => {
 const verifyEmail = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     verificationToken: req.params.token
-  });
-
-  console.log("VERIFY TOKEN RECEIVED:", req.params.token);
+  }).setOptions({ includeDeleted: true });
 
   if (!user) {
     return res.status(404).json({
