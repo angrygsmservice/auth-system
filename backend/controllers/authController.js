@@ -124,6 +124,7 @@ const register = asyncHandler(async (req, res) => {
   await user.save();
 
   console.log("USER SAVED:", user._id);
+  console.log("SAVED VERIFICATION TOKEN:", user.verificationToken);
 
   const verificationLink =
     `https://angrygsmservice.com/api/v1/auth/verify-email/${verificationToken}`;
