@@ -28,13 +28,9 @@ export default function RegisterPage() {
         throw new Error("All fields are required");
       }
 
-      console.log(
-        "API URL:",
-        process.env.NEXT_PUBLIC_API_URL
-      );
+      const url = "/api/v1/auth/register";
 
-      const url =
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`;
+      console.log("REGISTER URL:", url);
 
       console.log("REGISTER URL:", url);
       console.log("REGISTER REQUEST START");
