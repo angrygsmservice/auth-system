@@ -11,7 +11,7 @@ export default function DepositPage() {
         const getProfile = async () => {
           try {
             const res = await API.get("/users/profile");
-            setBalance(res.data.data.balance || 0);
+            setBalance(res.data.balance || 0);
           } catch (error) {
             console.log("DEPOSIT PROFILE ERROR:", error);
           }
