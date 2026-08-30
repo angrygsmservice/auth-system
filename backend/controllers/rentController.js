@@ -7,6 +7,8 @@ const Service = require("../models/Service");
 
 const createRentOrder = async (req, res) => {
   try {
+    console.log("RENT REQUEST:", req.body);
+
     const { serviceId } = req.body;
 
     // =================================================
